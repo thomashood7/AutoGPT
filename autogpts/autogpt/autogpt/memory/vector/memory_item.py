@@ -9,7 +9,7 @@ import numpy as np
 from pydantic import BaseModel
 
 from autogpt.config import Config
-from autogpt.core.resource.model_providers import ChatMessage
+from autogpt.core.resource.model_providers import ChatMessage, OpenAIProvider
 from autogpt.processing.text import chunk_content, split_text, summarize_text
 
 from .utils import Embedding, get_embedding
@@ -108,9 +108,10 @@ class MemoryItem(BaseModel, arbitrary_types_allowed=True):
         return MemoryItem.from_text(content, "text_file", config, {"location": path})
 
     @staticmethod
-    def from_code_file(content: str, path: str):
+    def from_code_file(content: str, path: str, config: Config):
+        """Create a MemoryItem from a code file."""
         # TODO: implement tailored code memories
-        return MemoryItem.from_text(content, "code_file", {"location": path})
+        return MemoryItem.from_text(content, "code_file", config, {"location": path})
 
     @staticmethod
     def from_ai_action(ai_message: ChatMessage, result_message: ChatMessage):
@@ -156,9 +157,10 @@ class MemoryItem(BaseModel, arbitrary_types_allowed=True):
             question_for_summary=question,
         )
 
-    def dump(self, calculate_length=False) -> str:
+    def dump(self, calculate_length: bool = False) -> str:
+        """Return a formatted representation of the memory item."""
         if calculate_length:
-            token_length = self.llm_provider.count_tokens(
+            token_length = OpenAIProvider.count_tokens(
                 self.raw_content, Config().embedding_model
             )
         return f"""
